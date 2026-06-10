@@ -29,8 +29,26 @@ _base_pts = [
 module _base_poly2d() { polygon(_base_pts); }
 
 module _base_outline2d() {
-    // 꼭짓점만 살짝 라운딩 (프린팅/CNC 공구 반경)
-    offset(r = 1.8) offset(delta = -1.8) _base_poly2d();
+    // 볼록 꼭짓점 R3 + 오목 꼭짓점 R3 (응력 집중 완화, CNC 공구 반경)
+    offset(r = 3) offset(r = -6) offset(r = 3) _base_poly2d();
+}
+
+// 웨이스트 보강 리브 중심선 — 윤곽 경사 에지를 따라 인셋 2.5
+// (베이스 하면에서 아래로 돌출, C-채널 단면화. CNC 가공 시 생략 가능)
+rib_x0 = -62; rib_x1 = -28;
+function _waist_edge_y(x) = 20 - 0.25 * (x + 58);   // 패드(-58,20)→(-34,14) 에지
+
+module _waist_ribs() {
+    for (s = [-1, 1]) {
+        y0 = s * (_waist_edge_y(rib_x0) - 2.5);
+        y1 = s * (_waist_edge_y(rib_x1) - 2.5);
+        translate([0, 0, -base_t - 6])
+            linear_extrude(height = 6 + 0.01)
+                hull() {
+                    translate([rib_x0, y0]) circle(d = 4);
+                    translate([rib_x1, y1]) circle(d = 4);
+                }
+    }
 }
 
 // 육각 단부 장공 (헥스 벤트)
@@ -57,6 +75,8 @@ module base_plate() {
             // (베이스는 윗면을 베드에 대고 프린팅 → 블록이 서포트 없이 출력됨)
             translate([jack_block_x, 0, jack_z])
                 cube(jack_block, center = true);
+            // 웨이스트 보강 리브 (하면, C-채널 단면화)
+            _waist_ribs();
         }
 
         // 출력축 구멍 Ø8.3 — Ø8 쇼울더가 통과해 베이스에서 위치 결정
