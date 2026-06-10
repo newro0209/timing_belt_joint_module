@@ -14,6 +14,26 @@ module _slot2d_x(w, l) {
     }
 }
 
+// ---- 베이스 도그본 윤곽 2D — 소재 절약 + CNC 2.5D 호환 ----
+module _base_outline2d() {
+    // 모터 패드 (슬롯·보스 장공·잭 블록 영역)
+    offset(r = base_corner_r)
+        translate([(base_pad_x0 + base_pad_x1) / 2, 0])
+            square([base_pad_x1 - base_pad_x0 - 2 * base_corner_r,
+                    2 * base_pad_yh - 2 * base_corner_r], center = true);
+    // 연결 빔
+    translate([(base_pad_x1 + base_beam_x1) / 2, 0])
+        square([base_beam_x1 - base_pad_x1, 2 * base_beam_yh], center = true);
+    // 출력 디스크
+    circle(r = base_disc_r);
+    // 출력측 장착 귀 2개
+    for (s = [-1, 1])
+        hull() {
+            translate([base_ear[0], s * base_ear[1]]) circle(r = base_ear_r);
+            circle(r = 18);
+        }
+}
+
 // -----------------------------------------------------
 // 1. 베이스 플레이트 (프린팅)
 // -----------------------------------------------------
@@ -21,14 +41,10 @@ module base_plate() {
     color(c_print)
     difference() {
         union() {
-            // 본체: 모서리 둥근 플레이트, z -base_t..0
+            // 본체: 도그본 플레이트, z -base_t..0
             translate([0, 0, -base_t])
                 linear_extrude(height = base_t)
-                    offset(r = base_corner_r)
-                        translate([(base_x_min + base_x_max) / 2, 0])
-                            square([base_x_max - base_x_min - 2 * base_corner_r,
-                                    2 * base_y_half - 2 * base_corner_r],
-                                   center = true);
+                    _base_outline2d();
             // 잭 스크류 블록: 모터 앞쪽(출력 풀리 쪽), 베이스 하면 아래
             // 모터 몸체가 베이스 아래 매달리므로 스크류도 같은 높이에 있어야 함
             // (베이스는 윗면을 베드에 대고 프린팅 → 블록이 서포트 없이 출력됨)

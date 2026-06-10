@@ -126,6 +126,17 @@ module head_washer() {
 //    하면(16.2)에 풀리 상부 플랜지 받이 포켓 Ø44.6x1 — 풀리 센터링
 //    베어링 보어: 하부는 아래로, 상부는 위로 개방 (압입 가능)
 // ---------------------------------------------------
+// 3-로브 플랜지 2D — 볼트 자리만 남기고 스캘럽 (소재 절약)
+module _hub_flange2d() {
+    circle(d = hub_flange_core_d);
+    for (a = clamp_bolt_angles)
+        rotate([0, 0, a])
+            hull() {
+                translate([clamp_pcd / 2, 0]) circle(d = flange_lobe_d);
+                circle(d = 34);
+            }
+}
+
 module arm_hub() {
     color(c_print)
         difference() {
@@ -133,15 +144,16 @@ module arm_hub() {
                 // 허브 본체
                 translate([0, 0, hub_z0])
                     cylinder(d = hub_od, h = hub_z1 - hub_z0);
-                // 클램프 플랜지 (허브 하단 일체, 두께 4)
+                // 클램프 플랜지 (허브 하단 일체, 두께 4, 3-로브)
                 translate([0, 0, hub_z0])
-                    cylinder(d = hub_flange_od, h = hub_flange_t);
-                // 암 (+x 방향, 끝 둥글게)
+                    linear_extrude(height = hub_flange_t)
+                        _hub_flange2d();
+                // 암 (+x 방향, 끝으로 갈수록 테이퍼)
                 translate([0, 0, arm_z0])
                     linear_extrude(height = arm_z1 - arm_z0)
                         hull() {
-                            circle(d = hub_od);
-                            translate([arm_len, 0]) circle(d = arm_w);
+                            circle(d = arm_w);
+                            translate([arm_len, 0]) circle(d = arm_w_tip);
                         }
             }
             // 풀리 받이 포켓 (하면, 상부 플랜지 Ø44 센터링)
@@ -165,6 +177,14 @@ module arm_hub() {
             // 암 끝 Ø8 구멍 (다음 관절용)
             translate([arm_len, 0, arm_z0 - eps])
                 cylinder(d = 8, h = (arm_z1 - arm_z0) + 2*eps);
+            // 경량화 트러스 컷 (관통, 측벽 5mm 이상 유지)
+            for (s = arm_slots)
+                translate([0, 0, arm_z0 - eps])
+                    linear_extrude(height = (arm_z1 - arm_z0) + 2*eps)
+                        hull() {
+                            translate([s[0] + s[2]/2, 0]) circle(d = s[2]);
+                            translate([s[1] - s[2]/2, 0]) circle(d = s[2]);
+                        }
         }
 }
 
@@ -204,11 +224,23 @@ module pulley60() {
 // 9. 클램프 링 (프린팅) — 풀리 하부 플랜지를 아래에서 받침
 //    너트 포켓은 윗면(중력으로 너트 유지, 조립 편의)
 // ---------------------------------------------------
+// 3-로브 링 2D — 플랜지 접촉 링(Ø46) + 볼트 로브만 남김 (소재 절약)
+module _ring2d() {
+    circle(d = 46);
+    for (a = clamp_bolt_angles)
+        rotate([0, 0, a])
+            hull() {
+                translate([clamp_pcd / 2, 0]) circle(d = flange_lobe_d);
+                circle(d = 42);
+            }
+}
+
 module clamp_ring() {
     color(c_print2)
         difference() {
             translate([0, 0, clamp_ring_z0])
-                cylinder(d = clamp_ring_od, h = clamp_ring_z1 - clamp_ring_z0);
+                linear_extrude(height = clamp_ring_z1 - clamp_ring_z0)
+                    _ring2d();
             // 내경 (풀리 보스 Ø32 회피)
             translate([0, 0, clamp_ring_z0 - eps])
                 cylinder(d = clamp_ring_id,

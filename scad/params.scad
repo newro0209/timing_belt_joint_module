@@ -10,12 +10,16 @@
 axis_dist = 99.2;     // 축간거리 C
 base_t    = 8;        // 베이스 플레이트 두께
 
-// ---- 베이스 플레이트 외형 ----
-base_x_min = -130;  base_x_max = 38;
-base_y_half = 40;
+// ---- 베이스 플레이트 외형 (도그본: 모터 패드 + 빔 + 출력 디스크) ----
 base_corner_r = 8;
-mount_hole_d = 4.5;                     // 프레임 장착 M4 관통홀
-mount_holes  = [[-122, -32], [-122, 32], [30, -32], [30, 32]];
+base_pad_x0 = -128;  base_pad_x1 = -58;    // 모터 패드 (잭 블록 x-72~-62 포함)
+base_pad_yh = 28;
+base_beam_x1 = -24;  base_beam_yh = 13;    // 연결 빔
+base_disc_r = 32;                          // 출력 디스크 (클램프 링 r28 + 여유)
+base_ear = [20, 28];                       // 출력측 장착 귀 중심 (±y)
+base_ear_r = 7;
+mount_hole_d = 4.5;                        // 프레임 장착 M4 관통홀
+mount_holes  = [[-123, 0], [-41, 0], [20, 28], [20, -28]];
 
 // ---- 출력축 적층 (z는 베이스 윗면 기준) ----
 // 스트리퍼 볼트는 머리 하향: 머리+와셔가 베이스 아래, M6 너트가 적층 위
@@ -65,8 +69,13 @@ hub_z1        = 45;
 hub_flange_od = 58;  hub_flange_t = 4;
 hub_flange_z1 = hub_z0 + hub_flange_t;  // 20.2
 hub_recess_d  = 44.6; hub_recess_h = 1.0;  // 풀리 상부 플랜지 센터링 포켓
-arm_len       = 85;  arm_w = 26;
+hub_flange_core_d = 48;                    // 3-로브 플랜지 중심 디스크 (리세스 + 벽 1.7)
+flange_lobe_d = 13;                        // 볼트 자리 로브
+arm_len       = 85;
+arm_w         = 32;                        // 허브측 폭 (= hub_od)
+arm_w_tip     = 18;                        // 끝단 폭 (테이퍼)
 arm_z0        = 39;  arm_z1 = 45;
+arm_slots = [[20, 36, 12], [42, 56, 10], [62, 74, 7]];  // 경량화 트러스 컷 [x0,x1,폭]
 
 // ---- 벨트 GT2-280, 6mm 폭 ----
 belt_w  = 6;
