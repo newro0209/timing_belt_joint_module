@@ -44,16 +44,16 @@ module cutaway(c, d = 0.3) {
 // ---- 출력축 어셈블리 (내부 적층 노출) ----
 module output_assembly() {
     cutaway(c_steel, 0)     stripper_bolt();             // #5
-    cutaway(c_steel, 0.25)  bearing_608(lower_brg_z0);   // #6
-    cutaway(c_steel, 0.25)  bearing_608(upper_brg_z0);   // #6
+    cutaway(c_move_m, 0.25) bearing_608(lower_brg_z0);   // #6
+    cutaway(c_move_m, 0.25) bearing_608(upper_brg_z0);   // #6
     cutaway(c_alu, 0.25)    inner_spacer();              // #7
     cutaway(c_alu, 0.25)    standoff_spacer();           // #8
     cutaway(c_alu, 0.25)    shim_washer();               // #9
     cutaway(c_steel, 0.25)  top_washer();                // #10
     cutaway(c_steel, 0.25)  head_washer();               // #10
-    cutaway(c_print, 0.8)   arm_hub();                   // #16
-    cutaway(c_alu, 0.5)     pulley60();                  // #3
-    cutaway(c_print2, 0.5)  clamp_ring();                // #17
+    cutaway(c_move, 0.8)    arm_hub();                   // #16
+    cutaway(c_move_m, 0.5)  pulley60();                  // #3
+    cutaway(c_move2, 0.5)   clamp_ring();                // #17
     pulley_bolts();                               // #12 + #13
     m6_top_nut();                                 // #18
 }

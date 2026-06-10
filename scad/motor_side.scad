@@ -63,7 +63,7 @@ module _hex_slot2d(l, w) {
 // 1. 베이스 플레이트 (프린팅)
 // -----------------------------------------------------
 module base_plate() {
-    color(c_print)
+    color(c_stat)
     difference() {
         union() {
             // 본체: 도그본 플레이트, z -base_t..0
@@ -148,8 +148,8 @@ module nema17() {
     translate([-axis_dist, 0, -base_t])
         cylinder(d = nema_boss_d, h = nema_boss_h);
 
-    // 모터축 (축 길이 22mm → 베이스 윗면 기준 z 14까지)
-    color(c_steel)
+    // 모터축 (축 길이 22mm → 베이스 윗면 기준 z 14까지) — 회전부
+    color(c_move_m)
     translate([-axis_dist, 0, -base_t])
         cylinder(d = nema_shaft_d, h = nema_shaft_top + base_t);
 }
@@ -159,7 +159,7 @@ module nema17() {
 //    이빨부 z 8.4..16 — 벨트(9.4..15.4)와 정렬, 상단은 축 끝(14) 위로 약간 돌출
 // -----------------------------------------------------
 module pulley20() {
-    color(c_alu)
+    color(c_move_m)
     translate([-axis_dist, 0, 0])
         difference() {
             union() {

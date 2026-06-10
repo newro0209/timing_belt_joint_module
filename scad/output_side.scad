@@ -45,8 +45,8 @@ module stripper_bolt() {
 // ---------------------------------------------------
 module bearing_608(z0) {
     translate([0, 0, z0]) {
-        // 외륜 Ø22..Ø17.8
-        color(c_steel)
+        // 외륜 Ø22..Ø17.8 — 허브와 함께 회전
+        color(c_move_m)
             difference() {
                 cylinder(d = brg_od, h = brg_w);
                 translate([0, 0, -eps]) cylinder(d = 17.8, h = brg_w + 2*eps);
@@ -57,8 +57,8 @@ module bearing_608(z0) {
                 cylinder(d = 12.4, h = brg_w);
                 translate([0, 0, -eps]) cylinder(d = brg_id, h = brg_w + 2*eps);
             }
-        // 실드 (폭 중앙부)
-        color([0.55, 0.55, 0.58])
+        // 실드 (외륜 부착, 회전)
+        color([0.82, 0.66, 0.42])
             translate([0, 0, brg_w/2 - 2])
                 difference() {
                     cylinder(d = 17.8, h = 4);
@@ -138,7 +138,7 @@ module _hub_flange2d() {
 }
 
 module arm_hub() {
-    color(c_print)
+    color(c_move)
         difference() {
             union() {
                 // 허브 본체
@@ -201,7 +201,7 @@ module arm_hub() {
 // 8. GT2 60T 출력 풀리 (12mm bore, 세트스크류 보스 하향)
 // ---------------------------------------------------
 module pulley60() {
-    color(c_alu)
+    color(c_move_m)
         difference() {
             union() {
                 // 세트스크류 보스 (아래 — 클램프 링 내경 안)
@@ -245,7 +245,7 @@ module _ring2d() {
 }
 
 module clamp_ring() {
-    color(c_print2)
+    color(c_move2)
         difference() {
             translate([0, 0, clamp_ring_z0])
                 linear_extrude(height = clamp_ring_z1 - clamp_ring_z0)
@@ -272,7 +272,7 @@ module clamp_ring() {
 // 10. M3x16 클램프 볼트 3개 + 너트 (포켓 안)
 // ---------------------------------------------------
 module pulley_bolts() {
-    color(c_steel)
+    color(c_move_m)
         for (a = clamp_bolt_angles)
             rotate([0, 0, a])
                 translate([clamp_pcd/2, 0, 0]) {
