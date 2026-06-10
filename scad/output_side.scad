@@ -1,36 +1,39 @@
 include <params.scad>
 
 // =====================================================
-// 출력축 부품 — 스트리퍼 볼트 + 608ZZ x2 + 암 허브 + GT2 60T 풀리
+// 출력축 부품 — 스트리퍼 볼트(머리 하향) + 608ZZ x2 + 암 허브 + GT2 60T 풀리
 // 모든 모듈은 전역 좌표계에 배치된 상태로 그려짐
 // (베이스 윗면 z=0, 출력축 중심 (0,0), 암은 +x 방향)
 // 모듈 정의만 있음 — 호출은 assembly.scad에서.
+//
+// 적층 (아래→위):
+//   머리 Ø13 / M8와셔(베이스 아래) / 베이스 8
+//   / 스케이트 스페이서 10+10 / 하부 608ZZ 7 / 스케이트 스페이서 10
+//   / 상부 608ZZ 7 / 심와셔 0.7 / M8와셔 1.6 / M6 나일록 너트
+//   쇼울더 Ø8 L55: z -9.6 .. 45.4, M6 나사부 45.4 .. 55.4
 // =====================================================
 
 eps = 0.01;
 
-// 적층 기준 z (params 유도값)
-osb_shoulder_top = shoulder_top + shim_t + top_washer_t;   // 26.4 : 쇼울더부 끝 = 볼트 머리 자리면
-
 // ---------------------------------------------------
-// 1. 스트리퍼 볼트 (쇼울더 Ø8 L25 상당 + M6 나사부)
+// 1. 스트리퍼 볼트 (쇼울더 Ø8 L55 + M6x10, 머리 하향)
 // ---------------------------------------------------
 module stripper_bolt() {
-    color(c_steel) {
+    tinted(c_axle) {
         difference() {
             union() {
-                // Ø8 쇼울더부 (z 0 부근 .. 26.4)
-                translate([0, 0, -0.5])
-                    cylinder(d = 8, h = osb_shoulder_top + 0.5);
-                // 머리
-                translate([0, 0, osb_shoulder_top])
+                // 머리 (베이스 아래, 와셔 밑)
+                translate([0, 0, shoulder_z0 - bolt_head_h])
                     cylinder(d = bolt_head_d, h = bolt_head_h);
-                // M6 나사부 (베이스 관통 + 아래로 6mm)
-                translate([0, 0, -base_t - 6])
-                    cylinder(d = 6, h = base_t + 6);
+                // Ø8 쇼울더부
+                translate([0, 0, shoulder_z0])
+                    cylinder(d = 8, h = shoulder_l);
+                // M6 나사부 (위쪽 끝)
+                translate([0, 0, shoulder_z1])
+                    cylinder(d = 6, h = m6_thread_l);
             }
-            // 육각 소켓 자국 (머리 윗면, Ø6 x 3)
-            translate([0, 0, osb_shoulder_top + bolt_head_h - 3])
+            // 육각 소켓 자국 (머리 아랫면)
+            translate([0, 0, shoulder_z0 - bolt_head_h - eps])
                 cylinder($fn = 6, d = 6, h = 3 + eps);
         }
     }
@@ -38,60 +41,134 @@ module stripper_bolt() {
 
 // ---------------------------------------------------
 // 2. 608ZZ 베어링 (z0에서 시작)
+//    내륜 외경 ~12.4 / 외륜 내경 ~17.8 (실물 근사)
 // ---------------------------------------------------
 module bearing_608(z0) {
     translate([0, 0, z0]) {
-        // 외륜 Ø22..Ø18.5
-        color(c_steel)
+        // 외륜 Ø22..Ø17.8 — 허브와 함께 회전
+        tinted(c_move_m)
             difference() {
                 cylinder(d = brg_od, h = brg_w);
-                translate([0, 0, -eps]) cylinder(d = 18.5, h = brg_w + 2*eps);
+                translate([0, 0, -eps]) cylinder(d = 17.8, h = brg_w + 2*eps);
             }
-        // 내륜 Ø11.5..Ø8
-        color(c_steel)
+        // 내륜 Ø12.4..Ø8
+        tinted(c_steel)
             difference() {
-                cylinder(d = 11.5, h = brg_w);
+                cylinder(d = 12.4, h = brg_w);
                 translate([0, 0, -eps]) cylinder(d = brg_id, h = brg_w + 2*eps);
             }
-        // 실드 (폭 중앙부)
-        color([0.55, 0.55, 0.58])
+        // 실드 (외륜 부착, 회전)
+        tinted([0.82, 0.66, 0.42])
             translate([0, 0, brg_w/2 - 2])
                 difference() {
-                    cylinder(d = 18.5, h = 4);
-                    translate([0, 0, -eps]) cylinder(d = 11.5, h = 4 + 2*eps);
+                    cylinder(d = 17.8, h = 4);
+                    translate([0, 0, -eps]) cylinder(d = 12.4, h = 4 + 2*eps);
                 }
     }
 }
 
 // ---------------------------------------------------
-// 3. 내륜 스페이서 (z 10..18)
+// 1b. [collar] Ø8 연마봉 + 샤프트 칼라 2개
+//     칼라가 머리/너트/와셔/심을 모두 대체 — 위치 무단 조절
 // ---------------------------------------------------
-module inner_spacer() {
-    color(c_alu)
+module axle_rod() {
+    tinted(c_axle)
+        translate([0, 0, rod_z0])
+            cylinder(d = 8, h = rod_l);
+}
+
+module shaft_collar(z0) {
+    tinted(c_nut)
+        translate([0, 0, z0])
+            difference() {
+                cylinder(d = collar_od, h = collar_w);
+                translate([0, 0, -eps]) cylinder(d = 8.05, h = collar_w + 2*eps);
+                // 세트스크류 구멍 (반경 방향)
+                translate([0, 0, collar_w / 2])
+                    rotate([0, 90, 0])
+                        cylinder(d = 3, h = collar_od / 2 + eps);
+            }
+}
+
+// 하부 칼라: 베이스 하면 지지 / 상부 칼라: 내륜 적층 압축 (예압 조절)
+module collar_lower() { shaft_collar(-base_t - collar_w); }
+module collar_upper() { shaft_collar(stack_top); }
+
+// ---------------------------------------------------
+// 1c. [printed] M8x70 부분나사 볼트 + M8 나일록 + 프린팅 슬리브
+//     금속 스페이서 0개 — 슬리브는 프린팅 (크리프 시 재조임 필요)
+// ---------------------------------------------------
+module m8_axle_bolt() {
+    tinted(c_axle) {
+        // 육각 머리 (베이스 아래, 와셔 밑, 폭간 13)
+        translate([0, 0, shoulder_z0 - m8_head_h])
+            cylinder($fn = 6, d = m8_head_d / cos(30), h = m8_head_h);
+        // 민자부 Ø7.9
+        translate([0, 0, shoulder_z0])
+            cylinder(d = 7.9, h = m8_shank_l);
+        // 나사부 (시각화: 약간 가는 원통)
+        translate([0, 0, shoulder_z0 + m8_shank_l])
+            cylinder(d = 7.7, h = 70 - m8_shank_l);
+    }
+}
+
+module m8_top_fastener() {
+    nut_z0 = stack_top + top_washer_t;        // 와셔 44..45.6 위
+    tinted(c_washer)
+        translate([0, 0, stack_top])              // 상부 M8 평와셔
+            difference() {
+                cylinder(d = washer_od, h = top_washer_t);
+                translate([0, 0, -eps]) cylinder(d = 8.4, h = top_washer_t + 2*eps);
+            }
+    tinted(c_nut) {
+        translate([0, 0, nut_z0])                 // M8 나일록
+            cylinder($fn = 6, d = nut_m8_af / cos(30), h = nut_m8_h);
+        translate([0, 0, nut_z0 + nut_m8_h])      // 나일론 캡
+            cylinder(d = 11, h = 1);
+    }
+}
+
+// 프린팅 슬리브 (고정부 → c_stat)
+module printed_standoff_sleeve() {
+    tinted(c_stat)
+        difference() {
+            cylinder(d = sleeve_standoff_od, h = standoff_h);
+            translate([0, 0, -eps]) cylinder(d = 8.4, h = standoff_h + 2*eps);
+        }
+}
+
+module printed_inner_sleeve() {
+    tinted(c_stat)
         translate([0, 0, lower_brg_z0 + brg_w])
             difference() {
-                cylinder(d = spacer_od, h = spacer_h);
+                cylinder(d = sleeve_inner_od, h = spacer_h);
                 translate([0, 0, -eps]) cylinder(d = 8.4, h = spacer_h + 2*eps);
             }
 }
 
 // ---------------------------------------------------
-// 4. 스탠드오프 스페이서 (z 0..3)
+// 3. 스케이트 스페이서 8x10x10 (범용)
 // ---------------------------------------------------
-module standoff_spacer() {
-    color(c_alu)
-        difference() {
-            cylinder(d = spacer_od, h = standoff_h);
-            translate([0, 0, -eps]) cylinder(d = 8.4, h = standoff_h + 2*eps);
-        }
+module skate_spacer(z0) {
+    tinted(c_alu)
+        translate([0, 0, z0])
+            difference() {
+                cylinder(d = skate_od, h = skate_l);
+                translate([0, 0, -eps]) cylinder(d = 8.2, h = skate_l + 2*eps);
+            }
 }
 
+// 내륜 스페이서 (베어링 사이, z 27..37)
+module inner_spacer()    { skate_spacer(lower_brg_z0 + brg_w); }
+// 스탠드오프 스페이서 2개 (베이스 위, z 0..20)
+module standoff_spacer() { skate_spacer(0); skate_spacer(skate_l); }
+
 // ---------------------------------------------------
-// 5. 심 와셔 (z 25..25.2)
+// 4. 심 와셔 (z 44..44.7, 0.5+0.2 조합 예시)
 // ---------------------------------------------------
 module shim_washer() {
-    color(c_alu)
-        translate([0, 0, shoulder_top])
+    tinted(c_shim)
+        translate([0, 0, stack_top])
             difference() {
                 cylinder(d = 14, h = shim_t);
                 translate([0, 0, -eps]) cylinder(d = 8.4, h = shim_t + 2*eps);
@@ -99,157 +176,207 @@ module shim_washer() {
 }
 
 // ---------------------------------------------------
-// 6. 상부 와셔 (z 25.2..26.4) — 외륜 Ø22에 닿지 않음
+// 5. 상부 M8 평와셔 (z 44.7..46.3) — 외륜 Ø17.8에 닿지 않음
+//    쇼울더 끝(45.4)을 와셔 두께 안에 품어 너트가 적층을 압축
 // ---------------------------------------------------
 module top_washer() {
-    color(c_steel)
-        translate([0, 0, shoulder_top + shim_t])
+    tinted(c_washer)
+        translate([0, 0, stack_top + shim_t])
             difference() {
-                cylinder(d = 16, h = top_washer_t);
+                cylinder(d = washer_od, h = top_washer_t);
                 translate([0, 0, -eps]) cylinder(d = 8.4, h = top_washer_t + 2*eps);
             }
 }
 
 // ---------------------------------------------------
-// 7. 암 허브 + 암 (프린팅)
+// 6. 머리측 M8 평와셔 (베이스 아래 z -9.6..-8)
 // ---------------------------------------------------
+module head_washer() {
+    tinted(c_washer)
+        translate([0, 0, shoulder_z0])
+            difference() {
+                cylinder(d = washer_od, h = head_washer_t);
+                translate([0, 0, -eps]) cylinder(d = 8.4, h = head_washer_t + 2*eps);
+            }
+}
+
+// ---------------------------------------------------
+// 7. 암 허브 + 암 (프린팅)
+//    하면(16.2)에 풀리 상부 플랜지 받이 포켓 Ø44.6x1 — 풀리 센터링
+//    베어링 보어: 하부는 아래로, 상부는 위로 개방 (압입 가능)
+// ---------------------------------------------------
+// 3-로브 플랜지 2D — 볼트 자리만 남기고 스캘럽 (소재 절약)
+module _hub_flange2d() {
+    circle(d = hub_flange_core_d);
+    for (a = clamp_bolt_angles)
+        rotate([0, 0, a])
+            hull() {
+                translate([clamp_pcd / 2, 0]) circle(d = flange_lobe_d);
+                circle(d = 34);
+            }
+}
+
 module arm_hub() {
-    color(c_print)
+    tinted(c_move)
         difference() {
             union() {
                 // 허브 본체
                 translate([0, 0, hub_z0])
                     cylinder(d = hub_od, h = hub_z1 - hub_z0);
-                // 클램프 플랜지 (일체)
-                translate([0, 0, hub_flange_z0])
-                    cylinder(d = hub_flange_od, h = hub_flange_z1 - hub_flange_z0);
-                // 암 (+x 방향, 끝 둥글게)
+                // 클램프 플랜지 (허브 하단 일체, 두께 4, 3-로브)
+                translate([0, 0, hub_z0])
+                    linear_extrude(height = hub_flange_t)
+                        _hub_flange2d();
+                // 플랜지 단차 지붕 — 뒤집어 출력 시 서포트 프리 (1.3mm 단차 6개)
+                for (k = [0:5])
+                    translate([0, 0, hub_flange_z1 + k * 1.3])
+                        linear_extrude(height = 1.3 + eps)
+                            offset(delta = -1.3 * (k + 1)) _hub_flange2d();
+                // 암 (+x 방향, 끝으로 갈수록 테이퍼)
                 translate([0, 0, arm_z0])
                     linear_extrude(height = arm_z1 - arm_z0)
                         hull() {
-                            circle(d = hub_od);
-                            translate([arm_len, 0]) circle(d = arm_w);
+                            circle(d = arm_w);
+                            translate([arm_len, 0]) circle(d = arm_w_tip);
                         }
             }
-            // 베어링 보어 (하부 z 3..10, 상부 z 18..25)
-            translate([0, 0, lower_brg_z0 - eps])
-                cylinder(d = brg_od + 0.1, h = brg_w + 2*eps);
-            translate([0, 0, upper_brg_z0 - eps])
-                cylinder(d = brg_od + 0.1, h = brg_w + 2*eps);
-            // 단턱 내경 Ø20 (z 10..18)
+            // 풀리 받이 포켓 (하면, 상부 플랜지 Ø44 센터링)
+            translate([0, 0, hub_z0 - eps])
+                cylinder(d = hub_recess_d, h = hub_recess_h + eps);
+            // 하부 베어링 보어 (하면에서 개방, 단턱 z 27)
+            translate([0, 0, hub_z0 - eps])
+                cylinder(d = brg_od + 0.1,
+                         h = (lower_brg_z0 + brg_w) - hub_z0 + eps);
+            // 중앙 웹 내경 Ø20 (z 27..37)
             translate([0, 0, lower_brg_z0 + brg_w - eps])
                 cylinder(d = 20, h = spacer_h + 2*eps);
-            // 허브 위쪽 립 내경 Ø20 (z 25..26)
-            translate([0, 0, shoulder_top - eps])
-                cylinder(d = 20, h = hub_z1 - shoulder_top + 2*eps);
-            // 클램프 볼트 M3 구멍 (Ø2.8) — 플랜지 관통
+            // 상부 베어링 보어 (윗면까지 개방, 단턱 z 37)
+            translate([0, 0, upper_brg_z0 - eps])
+                cylinder(d = brg_od + 0.1, h = hub_z1 - upper_brg_z0 + 2*eps);
+            // 클램프 볼트 M3 관통홀 Ø3.4 — 플랜지 관통
+            // + 헤드 카운터보어 Ø6.5 (단차 지붕 관통, 헤드 안착·드라이버 접근)
             for (a = clamp_bolt_angles)
-                rotate([0, 0, a])
-                    translate([clamp_pcd/2, 0, hub_flange_z0 - 5])
-                        cylinder(d = 2.8, h = (hub_flange_z1 - hub_flange_z0) + 10);
+                rotate([0, 0, a]) {
+                    translate([clamp_pcd/2, 0, hub_z0 - 1])
+                        cylinder(d = 3.4, h = hub_flange_t + 2);
+                    translate([clamp_pcd/2, 0, hub_flange_z1 - eps])
+                        cylinder(d = 6.5, h = 12);
+                }
             // 암 끝 Ø8 구멍 (다음 관절용)
             translate([arm_len, 0, arm_z0 - eps])
                 cylinder(d = 8, h = (arm_z1 - arm_z0) + 2*eps);
+            // 경량화 트러스 컷 (관통, 측벽 5mm 이상 유지)
+            for (s = arm_slots)
+                translate([0, 0, arm_z0 - eps])
+                    linear_extrude(height = (arm_z1 - arm_z0) + 2*eps)
+                        hull() {
+                            translate([s[0] + s[2]/2, 0]) circle(d = s[2]);
+                            translate([s[1] - s[2]/2, 0]) circle(d = s[2]);
+                        }
         }
 }
 
 // ---------------------------------------------------
-// 8. GT2 60T 출력 풀리
+// 8. GT2 60T 출력 풀리 (12mm bore, 세트스크류 보스 하향)
 // ---------------------------------------------------
 module pulley60() {
-    color(c_alu)
+    tinted(c_move_m)
         difference() {
             union() {
-                // 이빨부(원통 단순화) 본체
+                // 세트스크류 보스 (아래 — 클램프 링 내경 안)
                 translate([0, 0, p60_z0])
-                    cylinder(d = p60_od, h = p60_z1 - p60_z0);
+                    cylinder(d = p60_boss_d, h = p60_boss_h);
                 // 아래 플랜지
-                translate([0, 0, p60_z0])
-                    cylinder(d = p60_flange_d, h = 0.6);
-                // 위 플랜지
-                translate([0, 0, p60_z1 - 0.6])
-                    cylinder(d = p60_flange_d, h = 0.6);
+                translate([0, 0, p60_fl1_z0])
+                    cylinder(d = p60_flange_d, h = p60_flange_t);
+                // 이빨부(원통 단순화)
+                translate([0, 0, p60_teeth_z0])
+                    cylinder(d = p60_od, h = p60_teeth_h);
+                // 위 플랜지 (허브 포켓에 들어감)
+                translate([0, 0, p60_z1 - p60_flange_t])
+                    cylinder(d = p60_flange_d, h = p60_flange_t);
             }
-            // 보어
+            // 보어 Ø12 (Ø8 축 + OD10 스페이서 클리어런스)
             translate([0, 0, p60_z0 - eps])
                 cylinder(d = p60_bore, h = (p60_z1 - p60_z0) + 2*eps);
+            // 세트스크류 구멍 자국 (보스 측면 — 스크류는 제거 상태)
+            for (a = [0, 90])
+                rotate([0, 0, a])
+                    translate([p60_bore/2, 0, p60_z0 + p60_boss_h/2])
+                        rotate([0, 90, 0])
+                            cylinder(d = 3, h = (p60_boss_d - p60_bore)/2 + eps);
         }
 }
 
 // ---------------------------------------------------
-// 9. 클램프 링 (프린팅)
+// 9. 클램프 링 (프린팅) — 풀리 하부 플랜지를 아래에서 받침
+//    너트 포켓은 윗면(중력으로 너트 유지, 조립 편의)
 // ---------------------------------------------------
+// 3-로브 링 2D — 플랜지 접촉 링(Ø46) + 볼트 로브만 남김 (소재 절약)
+module _ring2d() {
+    circle(d = 46);
+    for (a = clamp_bolt_angles)
+        rotate([0, 0, a])
+            hull() {
+                translate([clamp_pcd / 2, 0]) circle(d = flange_lobe_d);
+                circle(d = 42);
+            }
+}
+
 module clamp_ring() {
-    color(c_print2)
+    tinted(c_move2)
         difference() {
             translate([0, 0, clamp_ring_z0])
-                cylinder(d = clamp_ring_od, h = clamp_ring_z1 - clamp_ring_z0);
-            // 내경
+                linear_extrude(height = clamp_ring_z1 - clamp_ring_z0)
+                    _ring2d();
+            // 내경 (풀리 보스 Ø32 회피)
             translate([0, 0, clamp_ring_z0 - eps])
-                cylinder(d = clamp_ring_id, h = (clamp_ring_z1 - clamp_ring_z0) + 2*eps);
-            // M3 관통 + 아랫면 육각 너트 포켓
+                cylinder(d = clamp_ring_id,
+                         h = (clamp_ring_z1 - clamp_ring_z0) + 2*eps);
+            // M3 관통 + 윗면 육각 너트 포켓
             for (a = clamp_bolt_angles)
                 rotate([0, 0, a])
                     translate([clamp_pcd/2, 0, 0]) {
                         translate([0, 0, clamp_ring_z0 - eps])
-                            cylinder(d = 3.4, h = (clamp_ring_z1 - clamp_ring_z0) + 2*eps);
-                        // 너트 포켓 (폭간 5.7, 깊이 2.5, 아랫면에서)
-                        translate([0, 0, clamp_ring_z0 - eps])
-                            cylinder($fn = 6, d = 5.7 / cos(30), h = 2.5 + eps);
+                            cylinder(d = 3.4,
+                                     h = (clamp_ring_z1 - clamp_ring_z0) + 2*eps);
+                        // 너트 포켓 (폭간 5.8, 깊이 2.5, 윗면에서)
+                        translate([0, 0, clamp_ring_z1 - 2.5])
+                            cylinder($fn = 6, d = 5.8 / cos(30), h = 2.5 + eps);
                     }
         }
 }
 
 // ---------------------------------------------------
-// 10. M3x12 클램프 볼트 3개 + 너트
+// 10. M3x16 클램프 볼트 3개 + 너트 (포켓 안)
 // ---------------------------------------------------
 module pulley_bolts() {
-    color(c_steel)
+    tinted(c_move_m)
         for (a = clamp_bolt_angles)
             rotate([0, 0, a])
                 translate([clamp_pcd/2, 0, 0]) {
                     // 머리 Ø5.5 x 3 (허브 플랜지 윗면 위)
                     translate([0, 0, hub_flange_z1])
                         cylinder(d = 5.5, h = 3);
-                    // 축 Ø3 (M3x12: 플랜지 + 클램프 링 관통)
-                    translate([0, 0, hub_flange_z1 - 12])
-                        cylinder(d = 3, h = 12);
-                    // 육각 너트 (클램프 링 포켓 위치, 폭간 5.5 x 2.4)
-                    translate([0, 0, clamp_ring_z0 + 0.05])
+                    // 축 Ø3 (M3x16: 플랜지 → 클램프 링 너트)
+                    translate([0, 0, hub_flange_z1 - 16])
+                        cylinder(d = 3, h = 16);
+                    // 육각 너트 (클램프 링 윗면 포켓 안, 폭간 5.5 x 2.4)
+                    translate([0, 0, clamp_ring_z1 - 2.45])
                         cylinder($fn = 6, d = 5.5 / cos(30), h = 2.4);
                 }
 }
 
 // ---------------------------------------------------
-// 11. M3 히트세트 인서트 3개 (허브 플랜지 안)
+// 11. M6 나일록 너트 (적층 상단 체결)
 // ---------------------------------------------------
-module heat_inserts() {
-    color(c_brass)
-        for (a = clamp_bolt_angles)
-            rotate([0, 0, a])
-                translate([clamp_pcd/2, 0, hub_flange_z1 - 4])
-                    difference() {
-                        cylinder(d = 4.6, h = 4);
-                        translate([0, 0, -eps]) cylinder(d = 3, h = 4 + 2*eps);
-                    }
-}
-
-// ---------------------------------------------------
-// 12. M6 와셔 + 나일록 너트 (베이스 하면 아래)
-// ---------------------------------------------------
-module m6_fastener() {
-    color(c_steel) {
-        // 대형 와셔 Ø16 x 1.6
-        translate([0, 0, -base_t - 1.6])
-            difference() {
-                cylinder(d = 16, h = 1.6);
-                translate([0, 0, -eps]) cylinder(d = 6.4, h = 1.6 + 2*eps);
-            }
-        // 나일록 너트 (육각 폭간 10, 높이 5)
-        translate([0, 0, -base_t - 1.6 - 5])
-            cylinder($fn = 6, d = 10 / cos(30), h = 5);
-        // 나일론 캡 (원통 1mm, 너트 아래쪽 끝)
-        translate([0, 0, -base_t - 1.6 - 5 - 1])
+module m6_top_nut() {
+    nut_z0 = stack_top + shim_t + top_washer_t;   // 46.3
+    tinted(c_nut) {
+        translate([0, 0, nut_z0])
+            cylinder($fn = 6, d = nut_m6_af / cos(30), h = nut_m6_h);
+        // 나일론 캡 (원통 1mm, 너트 위쪽 끝)
+        translate([0, 0, nut_z0 + nut_m6_h])
             cylinder(d = 9, h = 1);
     }
 }
