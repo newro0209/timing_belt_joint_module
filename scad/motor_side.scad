@@ -14,24 +14,31 @@ module _slot2d_x(w, l) {
     }
 }
 
-// ---- 베이스 도그본 윤곽 2D — 소재 절약 + CNC 2.5D 호환 ----
+// ---- 베이스 윤곽 2D — 패싯(각면) 스타일, 소재 절약 + CNC 2.5D 호환 ----
+// 모터 패드(45° 챔퍼) → 테이퍼 웨이스트 → 출력부 패싯 + 스웹트 윙(장착 귀)
+_base_pts = [
+    [-128, -18], [-118, -28], [-68, -28], [-58, -20],   // 모터 패드 (아래)
+    [-34, -14], [-22, -26],                             // 웨이스트 → 윙 진입
+    [14, -34], [26, -33], [33, -24],                    // 스웹트 윙 (아래)
+    [36, -10], [36, 10],                                // 전면 패싯
+    [33, 24], [26, 33], [14, 34],                       // 스웹트 윙 (위)
+    [-22, 26], [-34, 14],                               // 윙 → 웨이스트
+    [-58, 20], [-68, 28], [-118, 28], [-128, 18]        // 모터 패드 (위)
+];
+
+module _base_poly2d() { polygon(_base_pts); }
+
 module _base_outline2d() {
-    // 모터 패드 (슬롯·보스 장공·잭 블록 영역)
-    offset(r = base_corner_r)
-        translate([(base_pad_x0 + base_pad_x1) / 2, 0])
-            square([base_pad_x1 - base_pad_x0 - 2 * base_corner_r,
-                    2 * base_pad_yh - 2 * base_corner_r], center = true);
-    // 연결 빔
-    translate([(base_pad_x1 + base_beam_x1) / 2, 0])
-        square([base_beam_x1 - base_pad_x1, 2 * base_beam_yh], center = true);
-    // 출력 디스크
-    circle(r = base_disc_r);
-    // 출력측 장착 귀 2개
-    for (s = [-1, 1])
-        hull() {
-            translate([base_ear[0], s * base_ear[1]]) circle(r = base_ear_r);
-            circle(r = 18);
-        }
+    // 꼭짓점만 살짝 라운딩 (프린팅/CNC 공구 반경)
+    offset(r = 1.8) offset(delta = -1.8) _base_poly2d();
+}
+
+// 육각 단부 장공 (헥스 벤트)
+module _hex_slot2d(l, w) {
+    hull()
+        for (sx = [-1, 1])
+            translate([sx * (l - w) / 2, 0])
+                rotate(30) circle(d = w, $fn = 6);
 }
 
 // -----------------------------------------------------
@@ -82,6 +89,23 @@ module base_plate() {
         for (p = mount_holes)
             translate([p[0], p[1], -base_t - 1])
                 cylinder(d = mount_hole_d, h = base_t + 2);
+
+        // 상면 패널라인 트렌치 (깊이 2, 폭 3.5 — 윤곽 인셋 띠)
+        // 웨이스트 구간은 끊어 세그먼트화, 장착홀 주변은 키프아웃
+        translate([0, 0, -2])
+            linear_extrude(height = 3)
+                difference() {
+                    offset(delta = -3)   _base_poly2d();
+                    offset(delta = -6.5) _base_poly2d();
+                    translate([-44, 0]) square([26, 44], center = true);
+                    for (p = mount_holes) translate(p) circle(d = 13);
+                }
+
+        // 웨이스트 경사 헥스 벤트 2개 (관통)
+        for (s = [-1, 1])
+            translate([-46, s * 8.5, -base_t - 1])
+                linear_extrude(height = base_t + 2)
+                    rotate(-s * 8) _hex_slot2d(14, 5);
     }
 }
 
