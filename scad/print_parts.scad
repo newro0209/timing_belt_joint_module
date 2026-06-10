@@ -17,7 +17,9 @@ include <params.scad>
 include <motor_side.scad>
 include <output_side.scad>
 
-part = "all";
+/* [출력 부품 선택] */
+// 내보낼 부품 (all = 베드 배치로 한꺼번에 미리보기)
+part = "all"; // ["all", "base", "hub"]
 
 module print_base() { rotate([180, 0, 0]) base_plate(); }                  // 윗면이 베드
 module print_hub()  { translate([0, 0, arm_z1]) rotate([180, 0, 0]) arm_hub(); }

@@ -15,10 +15,17 @@ include <params.scad>
 include <motor_side.scad>
 include <output_side.scad>
 
+/* [표시 옵션] */
+// 부품 라벨 (지시선 + 빌보드 텍스트) 표시
 show_labels = true;
+// 1/4 단면을 반투명 고스트로 표시
 show_cutaway = true;
-label_font = "Noto Sans CJK KR";   // 한글 폰트 (Windows: "Malgun Gothic")
-label_size = 4.8;
+// 단면 고스트 기본 투명도 (겉을 감싸는 부품은 cutaway()의 ga 인자로 차등)
+ghost_alpha = 0.30; // [0.05:0.05:1]
+// 한글 라벨 폰트 (Windows: "Malgun Gothic")
+label_font = "Noto Sans CJK KR";
+// 라벨 글자 크기
+label_size = 4.8; // [3:0.1:8]
 
 // ---- 라벨: 지시선 + 빌보드 텍스트 ----
 module label(txt, anchor, off, halign = "left") {
@@ -39,7 +46,6 @@ module label(txt, anchor, off, halign = "left") {
 // show_cutaway=false 로 단면 없이 통짜 표시
 // d: 절단 깊이 오프셋 — 부품마다 달리해 단면 z-fighting 방지(안쪽 부품일수록 작게)
 // 불투명 본체(3/4) + 같은 형상의 1/4을 $ghost_alpha 투명도로 겹침
-ghost_alpha = 0.30;
 module _quarter_cutter(c, d) {
     // +x / -y 사분면 (암 본체는 x>30이라 유지됨), z는 너트 위~머리 아래 커버
     color(c) translate([-d, -60, -34]) cube([30 + d, 60 + d, 96]);
@@ -88,14 +94,16 @@ belt();            // #4
 output_assembly();
 
 // ---- 부품 리스트 라벨 (DESIGN.md 6장 번호) ----
-// 텍스트 시작점을 좌/우 고정 칼럼(x ≈ ±36 / -78)에 정렬해 가독성 확보
-// 모터 측 (왼쪽 칼럼, 오른쪽 정렬)
-label("4 타이밍 벨트 GT2-280",   [-60, -12, 12],   [-60, -6, 30],  "right");
-label("2 입력 풀리 GT2 20T",     [-104, -5, 12],   [-16, -13, 20], "right");
-label("1 스테퍼 모터 NEMA 17",   [-110, -18, -25], [-18, -6, -16], "right");
-label("11 모터 체결 볼트 M3×12", [-84, -15.5, 2],  [-28, -10.5, 14], "right");
-label("14 잭 스크류 M3×20",      [-56, -1, -15],   [-29, -29, -35], "right");
-label("13 M3 육각 너트",         [-71, -1.5, -15], [21, -24.5, -27]);
+// 텍스트 시작점을 좌/우 칼럼에 정렬해 가독성 확보
+// 모터 측 (왼쪽 칼럼, 오른쪽 정렬) — 앵커는 모터 중심(-axis_dist) 상대 좌표
+label(str("4 타이밍 벨트 GT2-", belt_len),
+      [-axis_dist * 0.6, -12, 12], [-axis_dist * 0.4 - 20.8, -6, 30], "right");
+label("2 입력 풀리 GT2 20T",     [-axis_dist - 4.8, -5, 12],    [-16, -13, 20], "right");
+label("1 스테퍼 모터 NEMA 17",   [-axis_dist - 10.8, -18, -25], [-18, -6, -16], "right");
+label("11 모터 체결 볼트 M3×12", [-axis_dist + 15.5, -15.5, 2], [-28, -10.5, 14], "right");
+label("14 잭 스크류 M3×20",      [-axis_dist + 43.2, -1, -15],  [-29, -29, -35], "right");
+label("13 M3 육각 너트",         [-axis_dist + 28.2, -1.5, -15],
+      compact_base ? [25.4, -32.5, -43] : [21, -24.5, -27]);   // 컴팩트는 하단 중앙이 좁아 우하단으로
 label("3 출력 풀리 GT2 60T",     [-13.4, -13.4, 12.5], [3.4, -26.6, -58.5], "right");
 label("15 베이스 플레이트",       [-45, -15.5, -5], [27, -31.5, -29]);
 

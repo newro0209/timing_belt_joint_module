@@ -16,15 +16,22 @@ module _slot2d_x(w, l) {
 
 // ---- 베이스 윤곽 2D — 패싯(각면) 스타일, 소재 절약 + CNC 2.5D 호환 ----
 // 모터 패드(45° 챔퍼) → 테이퍼 웨이스트 → 출력부 패싯 + 스웹트 윙(장착 귀)
-_base_pts = [
-    [-128, -18], [-118, -28], [-68, -28], [-58, -20],   // 모터 패드 (아래)
-    [-34, -14], [-22, -26],                             // 웨이스트 → 윙 진입
-    [14, -34], [26, -33], [33, -24],                    // 스웹트 윙 (아래)
-    [36, -10], [36, 10],                                // 전면 패싯
-    [33, 24], [26, 33], [14, 34],                       // 스웹트 윙 (위)
-    [-22, 26], [-34, 14],                               // 윙 → 웨이스트
-    [-58, 20], [-68, 28], [-118, 28], [-128, 18]        // 모터 패드 (위)
-];
+// 모터 패드는 모터 중심(-axis_dist) 상대 좌표 — belt_len에 따라 함께 이동.
+// compact_base(C<81)면 웨이스트를 생략하고 패드가 윙에 직결된다.
+_m = -axis_dist;
+_pad_bot   = [[_m - 28.8, -18], [_m - 18.8, -28], [_m + 31.2, -28]];
+_pad_chamf = [[_m + 41.2, -20]];                    // 패드 → 웨이스트 챔퍼 (full 전용)
+_waist_bot = [[-34, -14], [-22, -26]];              // 웨이스트 → 윙 진입
+_wing      = [[14, -34], [26, -33], [33, -24],      // 스웹트 윙 (아래)
+              [36, -10], [36, 10],                  // 전면 패싯
+              [33, 24], [26, 33], [14, 34]];        // 스웹트 윙 (위)
+_waist_top = [[-22, 26], [-34, 14]];
+_pad_chamf_t = [[_m + 41.2, 20]];
+_pad_top   = [[_m + 31.2, 28], [_m - 18.8, 28], [_m - 28.8, 18]];
+
+_base_pts = compact_base
+    ? concat(_pad_bot, _wing, _pad_top)
+    : concat(_pad_bot, _pad_chamf, _waist_bot, _wing, _waist_top, _pad_chamf_t, _pad_top);
 
 module _base_poly2d() { polygon(_base_pts); }
 
@@ -79,8 +86,8 @@ module base_plate() {
             // 상부 608은 베이스 판 안, 하부 608은 보스 안 — 외륜 고정 하우징
             translate([0, 0, boss_z0])
                 cylinder(d = boss_od, h = -base_t - boss_z0);
-            // 웨이스트 보강 리브 (하면, C-채널 단면화)
-            _waist_ribs();
+            // 웨이스트 보강 리브 (하면, C-채널 단면화) — 컴팩트는 웨이스트 없음
+            if (!compact_base) _waist_ribs();
         }
 
         // 상부 608 포켓 Ø22.1 (베이스 윗면에서 압입, z -7..0)
@@ -128,15 +135,17 @@ module base_plate() {
                 difference() {
                     offset(delta = -3)   _base_poly2d();
                     offset(delta = -6.5) _base_poly2d();
-                    translate([-44, 0]) square([26, 44], center = true);
+                    if (!compact_base)
+                        translate([-44, 0]) square([26, 44], center = true);
                     for (p = mount_holes) translate(p) circle(d = 13);
                 }
 
-        // 웨이스트 경사 헥스 벤트 2개 (관통)
-        for (s = [-1, 1])
-            translate([-46, s * 8.5, -base_t - 1])
-                linear_extrude(height = base_t + 2)
-                    rotate(-s * 8) _hex_slot2d(14, 5);
+        // 웨이스트 경사 헥스 벤트 2개 (관통) — 컴팩트는 자리가 없어 생략
+        if (!compact_base)
+            for (s = [-1, 1])
+                translate([-46, s * 8.5, -base_t - 1])
+                    linear_extrude(height = base_t + 2)
+                        rotate(-s * 8) _hex_slot2d(14, 5);
     }
 }
 
