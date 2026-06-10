@@ -19,7 +19,7 @@ eps = 0.01;
 // 1. 스트리퍼 볼트 (쇼울더 Ø8 L55 + M6x10, 머리 하향)
 // ---------------------------------------------------
 module stripper_bolt() {
-    color(c_steel) {
+    tinted(c_axle) {
         difference() {
             union() {
                 // 머리 (베이스 아래, 와셔 밑)
@@ -46,19 +46,19 @@ module stripper_bolt() {
 module bearing_608(z0) {
     translate([0, 0, z0]) {
         // 외륜 Ø22..Ø17.8 — 허브와 함께 회전
-        color(c_move_m)
+        tinted(c_move_m)
             difference() {
                 cylinder(d = brg_od, h = brg_w);
                 translate([0, 0, -eps]) cylinder(d = 17.8, h = brg_w + 2*eps);
             }
         // 내륜 Ø12.4..Ø8
-        color(c_steel)
+        tinted(c_steel)
             difference() {
                 cylinder(d = 12.4, h = brg_w);
                 translate([0, 0, -eps]) cylinder(d = brg_id, h = brg_w + 2*eps);
             }
         // 실드 (외륜 부착, 회전)
-        color([0.82, 0.66, 0.42])
+        tinted([0.82, 0.66, 0.42])
             translate([0, 0, brg_w/2 - 2])
                 difference() {
                     cylinder(d = 17.8, h = 4);
@@ -72,13 +72,13 @@ module bearing_608(z0) {
 //     칼라가 머리/너트/와셔/심을 모두 대체 — 위치 무단 조절
 // ---------------------------------------------------
 module axle_rod() {
-    color(c_steel)
+    tinted(c_axle)
         translate([0, 0, rod_z0])
             cylinder(d = 8, h = rod_l);
 }
 
 module shaft_collar(z0) {
-    color(c_steel)
+    tinted(c_nut)
         translate([0, 0, z0])
             difference() {
                 cylinder(d = collar_od, h = collar_w);
@@ -99,7 +99,7 @@ module collar_upper() { shaft_collar(stack_top); }
 //     금속 스페이서 0개 — 슬리브는 프린팅 (크리프 시 재조임 필요)
 // ---------------------------------------------------
 module m8_axle_bolt() {
-    color(c_steel) {
+    tinted(c_axle) {
         // 육각 머리 (베이스 아래, 와셔 밑, 폭간 13)
         translate([0, 0, shoulder_z0 - m8_head_h])
             cylinder($fn = 6, d = m8_head_d / cos(30), h = m8_head_h);
@@ -114,12 +114,13 @@ module m8_axle_bolt() {
 
 module m8_top_fastener() {
     nut_z0 = stack_top + top_washer_t;        // 와셔 44..45.6 위
-    color(c_steel) {
+    tinted(c_washer)
         translate([0, 0, stack_top])              // 상부 M8 평와셔
             difference() {
                 cylinder(d = washer_od, h = top_washer_t);
                 translate([0, 0, -eps]) cylinder(d = 8.4, h = top_washer_t + 2*eps);
             }
+    tinted(c_nut) {
         translate([0, 0, nut_z0])                 // M8 나일록
             cylinder($fn = 6, d = nut_m8_af / cos(30), h = nut_m8_h);
         translate([0, 0, nut_z0 + nut_m8_h])      // 나일론 캡
@@ -129,7 +130,7 @@ module m8_top_fastener() {
 
 // 프린팅 슬리브 (고정부 → c_stat)
 module printed_standoff_sleeve() {
-    color(c_stat)
+    tinted(c_stat)
         difference() {
             cylinder(d = sleeve_standoff_od, h = standoff_h);
             translate([0, 0, -eps]) cylinder(d = 8.4, h = standoff_h + 2*eps);
@@ -137,7 +138,7 @@ module printed_standoff_sleeve() {
 }
 
 module printed_inner_sleeve() {
-    color(c_stat)
+    tinted(c_stat)
         translate([0, 0, lower_brg_z0 + brg_w])
             difference() {
                 cylinder(d = sleeve_inner_od, h = spacer_h);
@@ -149,7 +150,7 @@ module printed_inner_sleeve() {
 // 3. 스케이트 스페이서 8x10x10 (범용)
 // ---------------------------------------------------
 module skate_spacer(z0) {
-    color(c_alu)
+    tinted(c_alu)
         translate([0, 0, z0])
             difference() {
                 cylinder(d = skate_od, h = skate_l);
@@ -166,7 +167,7 @@ module standoff_spacer() { skate_spacer(0); skate_spacer(skate_l); }
 // 4. 심 와셔 (z 44..44.7, 0.5+0.2 조합 예시)
 // ---------------------------------------------------
 module shim_washer() {
-    color(c_alu)
+    tinted(c_shim)
         translate([0, 0, stack_top])
             difference() {
                 cylinder(d = 14, h = shim_t);
@@ -179,7 +180,7 @@ module shim_washer() {
 //    쇼울더 끝(45.4)을 와셔 두께 안에 품어 너트가 적층을 압축
 // ---------------------------------------------------
 module top_washer() {
-    color(c_steel)
+    tinted(c_washer)
         translate([0, 0, stack_top + shim_t])
             difference() {
                 cylinder(d = washer_od, h = top_washer_t);
@@ -191,7 +192,7 @@ module top_washer() {
 // 6. 머리측 M8 평와셔 (베이스 아래 z -9.6..-8)
 // ---------------------------------------------------
 module head_washer() {
-    color(c_steel)
+    tinted(c_washer)
         translate([0, 0, shoulder_z0])
             difference() {
                 cylinder(d = washer_od, h = head_washer_t);
@@ -216,7 +217,7 @@ module _hub_flange2d() {
 }
 
 module arm_hub() {
-    color(c_move)
+    tinted(c_move)
         difference() {
             union() {
                 // 허브 본체
@@ -279,7 +280,7 @@ module arm_hub() {
 // 8. GT2 60T 출력 풀리 (12mm bore, 세트스크류 보스 하향)
 // ---------------------------------------------------
 module pulley60() {
-    color(c_move_m)
+    tinted(c_move_m)
         difference() {
             union() {
                 // 세트스크류 보스 (아래 — 클램프 링 내경 안)
@@ -323,7 +324,7 @@ module _ring2d() {
 }
 
 module clamp_ring() {
-    color(c_move2)
+    tinted(c_move2)
         difference() {
             translate([0, 0, clamp_ring_z0])
                 linear_extrude(height = clamp_ring_z1 - clamp_ring_z0)
@@ -350,7 +351,7 @@ module clamp_ring() {
 // 10. M3x16 클램프 볼트 3개 + 너트 (포켓 안)
 // ---------------------------------------------------
 module pulley_bolts() {
-    color(c_move_m)
+    tinted(c_move_m)
         for (a = clamp_bolt_angles)
             rotate([0, 0, a])
                 translate([clamp_pcd/2, 0, 0]) {
@@ -371,7 +372,7 @@ module pulley_bolts() {
 // ---------------------------------------------------
 module m6_top_nut() {
     nut_z0 = stack_top + shim_t + top_washer_t;   // 46.3
-    color(c_steel) {
+    tinted(c_nut) {
         translate([0, 0, nut_z0])
             cylinder($fn = 6, d = nut_m6_af / cos(30), h = nut_m6_h);
         // 나일론 캡 (원통 1mm, 너트 위쪽 끝)

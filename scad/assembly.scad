@@ -31,47 +31,58 @@ module label(txt, anchor, off, halign = "left") {
     }
 }
 
-// ---- 1/4 단면 컷 (부품별 적용 — 절단면이 부품색으로 보이도록 커터에 색 지정) ----
+// ---- 1/4 단면 — 잘라내는 대신 반투명 고스트로 표시 ----
 // d: 절단 깊이 오프셋 — 부품마다 달리해 단면 z-fighting 방지(안쪽 부품일수록 작게)
-module cutaway(c, d = 0.3) {
+// 불투명 본체(3/4) + 같은 형상의 1/4을 $ghost_alpha 투명도로 겹침
+ghost_alpha = 0.30;
+module _quarter_cutter(c, d) {
+    // +x / -y 사분면 (암 본체는 x>30이라 유지됨)
+    color(c) translate([-d, -60, -16]) cube([30 + d, 60 + d, 75]);
+}
+// ga: 부품별 고스트 투명도 — 겉을 감싸는 큰 부품일수록 투명하게
+module cutaway(c, d = 0.3, ga = ghost_alpha) {
     difference() {
         children();
-        // +x / -y 사분면 컷 (암 본체는 x>30이라 유지됨)
-        color(c) translate([-d, -60, -16]) cube([30 + d, 60 + d, 75]);
+        _quarter_cutter(c, d);
     }
+    let($ghost_alpha = ga)
+        intersection() {
+            children();
+            color(c, ga) translate([-d - 0.05, -60, -16]) cube([30 + d, 60, 75]);
+        }
 }
 
 // ---- 출력축 어셈블리 (내부 적층 노출, 축 변형 공통+분기) ----
 module output_assembly() {
     // 공통부
-    cutaway(c_move_m, 0.25) bearing_608(lower_brg_z0);   // #6
-    cutaway(c_move_m, 0.25) bearing_608(upper_brg_z0);   // #6
-    cutaway(c_move, 0.8)    arm_hub();                   // #16
-    cutaway(c_move_m, 0.5)  pulley60();                  // #3
-    cutaway(c_move2, 0.5)   clamp_ring();                // #17
+    cutaway(c_move_m, 0.25, 0.4) bearing_608(lower_brg_z0);   // #6
+    cutaway(c_move_m, 0.25, 0.4) bearing_608(upper_brg_z0);   // #6
+    cutaway(c_move, 0.8, 0.13) arm_hub();                   // #16
+    cutaway(c_move_m, 0.5, 0.16) pulley60();                  // #3
+    cutaway(c_move2, 0.5, 0.2)  clamp_ring();                // #17
     pulley_bolts();                               // #12 + #13
 
     // 축 변형별 적층
     if (axle == "shoulder") {                     // 현행: 숄더볼트 + 심 + M6 너트
-        cutaway(c_steel, 0)     stripper_bolt();         // #5
+        cutaway(c_axle, 0)      stripper_bolt();         // #5
         cutaway(c_alu, 0.25)    inner_spacer();          // #7
         cutaway(c_alu, 0.25)    standoff_spacer();       // #8
-        cutaway(c_alu, 0.25)    shim_washer();           // #9
-        cutaway(c_steel, 0.25)  top_washer();            // #10
-        cutaway(c_steel, 0.25)  head_washer();           // #10
+        cutaway(c_shim, 0.25)   shim_washer();           // #9
+        cutaway(c_washer, 0.25) top_washer();            // #10
+        cutaway(c_washer, 0.25) head_washer();           // #10
         m6_top_nut();                                    // #18
     } else if (axle == "collar") {                // 옵션2: 연마봉 + 칼라 2
-        cutaway(c_steel, 0)     axle_rod();
+        cutaway(c_axle, 0)      axle_rod();
         cutaway(c_alu, 0.25)    inner_spacer();          // #7
         cutaway(c_alu, 0.25)    standoff_spacer();       // #8
-        cutaway(c_steel, 0.25)  collar_lower();
-        cutaway(c_steel, 0.25)  collar_upper();
+        cutaway(c_nut, 0.25)    collar_lower();
+        cutaway(c_nut, 0.25)    collar_upper();
     } else if (axle == "printed") {               // 옵션5: M8 볼트 + 프린팅 슬리브
-        cutaway(c_steel, 0)     m8_axle_bolt();
+        cutaway(c_axle, 0)      m8_axle_bolt();
         cutaway(c_stat, 0.25)   printed_standoff_sleeve();
         cutaway(c_stat, 0.25)   printed_inner_sleeve();
-        cutaway(c_steel, 0.25)  head_washer();
-        cutaway(c_steel, 0.25)  m8_top_fastener();
+        cutaway(c_washer, 0.25) head_washer();
+        cutaway(c_nut, 0.25)    m8_top_fastener();
     }
 }
 

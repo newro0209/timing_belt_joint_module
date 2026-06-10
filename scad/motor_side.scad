@@ -63,7 +63,7 @@ module _hex_slot2d(l, w) {
 // 1. 베이스 플레이트 (프린팅)
 // -----------------------------------------------------
 module base_plate() {
-    color(c_stat)
+    tinted(c_stat)
     difference() {
         union() {
             // 본체: 도그본 플레이트, z -base_t..0
@@ -134,7 +134,7 @@ module base_plate() {
 // -----------------------------------------------------
 module nema17() {
     // 몸체: 모서리 약간 깎인 정사각 단면 × nema_len
-    color(c_motor)
+    tinted(c_motor)
     translate([-axis_dist, 0, -base_t - nema_len])
         linear_extrude(height = nema_len)
             offset(r = 2) offset(delta = -2)   // 모서리 R2
@@ -144,12 +144,12 @@ module nema17() {
                 }
 
     // 위치결정 보스
-    color(c_motor)
+    tinted(c_motor)
     translate([-axis_dist, 0, -base_t])
         cylinder(d = nema_boss_d, h = nema_boss_h);
 
     // 모터축 (축 길이 22mm → 베이스 윗면 기준 z 14까지) — 회전부
-    color(c_move_m)
+    tinted(c_move_m)
     translate([-axis_dist, 0, -base_t])
         cylinder(d = nema_shaft_d, h = nema_shaft_top + base_t);
 }
@@ -159,7 +159,7 @@ module nema17() {
 //    이빨부 z 8.4..16 — 벨트(9.4..15.4)와 정렬, 상단은 축 끝(14) 위로 약간 돌출
 // -----------------------------------------------------
 module pulley20() {
-    color(c_move_m)
+    tinted(c_move_m)
     translate([-axis_dist, 0, 0])
         difference() {
             union() {
@@ -187,7 +187,7 @@ module pulley20() {
 //    (베이스 8 + 와셔 1 통과 후 모터 탭에 약 3mm 체결)
 // -----------------------------------------------------
 module motor_bolts() {
-    color(c_steel)
+    tinted(c_steel)
     for (sx = [-1, 1], sy = [-1, 1])
         translate([-axis_dist + sx * nema_hole_pitch / 2,
                    sy * nema_hole_pitch / 2, 0]) {
@@ -206,7 +206,7 @@ module motor_bolts() {
 // -----------------------------------------------------
 module jack_screw() {
     tip_x = -axis_dist + nema_side / 2;   // 모터 앞면(+x쪽) = 스크류 -x쪽 끝
-    color(c_steel) {
+    tinted(c_steel) {
         // 축부 Ø3×20 (x방향, 머리는 +x쪽 끝)
         translate([tip_x, 0, jack_z])
             rotate([0, 90, 0])
@@ -226,7 +226,7 @@ module jack_screw() {
 // 6. GT2-280 폐루프 벨트
 // -----------------------------------------------------
 module belt() {
-    color(c_belt)
+    tinted(c_belt)
     translate([0, 0, belt_z0])
         linear_extrude(height = belt_w)
             difference() {
