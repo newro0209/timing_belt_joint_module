@@ -68,6 +68,84 @@ module bearing_608(z0) {
 }
 
 // ---------------------------------------------------
+// 1b. [collar] Ø8 연마봉 + 샤프트 칼라 2개
+//     칼라가 머리/너트/와셔/심을 모두 대체 — 위치 무단 조절
+// ---------------------------------------------------
+module axle_rod() {
+    color(c_steel)
+        translate([0, 0, rod_z0])
+            cylinder(d = 8, h = rod_l);
+}
+
+module shaft_collar(z0) {
+    color(c_steel)
+        translate([0, 0, z0])
+            difference() {
+                cylinder(d = collar_od, h = collar_w);
+                translate([0, 0, -eps]) cylinder(d = 8.05, h = collar_w + 2*eps);
+                // 세트스크류 구멍 (반경 방향)
+                translate([0, 0, collar_w / 2])
+                    rotate([0, 90, 0])
+                        cylinder(d = 3, h = collar_od / 2 + eps);
+            }
+}
+
+// 하부 칼라: 베이스 하면 지지 / 상부 칼라: 내륜 적층 압축 (예압 조절)
+module collar_lower() { shaft_collar(-base_t - collar_w); }
+module collar_upper() { shaft_collar(stack_top); }
+
+// ---------------------------------------------------
+// 1c. [printed] M8x70 부분나사 볼트 + M8 나일록 + 프린팅 슬리브
+//     금속 스페이서 0개 — 슬리브는 프린팅 (크리프 시 재조임 필요)
+// ---------------------------------------------------
+module m8_axle_bolt() {
+    color(c_steel) {
+        // 육각 머리 (베이스 아래, 와셔 밑, 폭간 13)
+        translate([0, 0, shoulder_z0 - m8_head_h])
+            cylinder($fn = 6, d = m8_head_d / cos(30), h = m8_head_h);
+        // 민자부 Ø7.9
+        translate([0, 0, shoulder_z0])
+            cylinder(d = 7.9, h = m8_shank_l);
+        // 나사부 (시각화: 약간 가는 원통)
+        translate([0, 0, shoulder_z0 + m8_shank_l])
+            cylinder(d = 7.7, h = 70 - m8_shank_l);
+    }
+}
+
+module m8_top_fastener() {
+    nut_z0 = stack_top + top_washer_t;        // 와셔 44..45.6 위
+    color(c_steel) {
+        translate([0, 0, stack_top])              // 상부 M8 평와셔
+            difference() {
+                cylinder(d = washer_od, h = top_washer_t);
+                translate([0, 0, -eps]) cylinder(d = 8.4, h = top_washer_t + 2*eps);
+            }
+        translate([0, 0, nut_z0])                 // M8 나일록
+            cylinder($fn = 6, d = nut_m8_af / cos(30), h = nut_m8_h);
+        translate([0, 0, nut_z0 + nut_m8_h])      // 나일론 캡
+            cylinder(d = 11, h = 1);
+    }
+}
+
+// 프린팅 슬리브 (고정부 → c_stat)
+module printed_standoff_sleeve() {
+    color(c_stat)
+        difference() {
+            cylinder(d = sleeve_standoff_od, h = standoff_h);
+            translate([0, 0, -eps]) cylinder(d = 8.4, h = standoff_h + 2*eps);
+        }
+}
+
+module printed_inner_sleeve() {
+    color(c_stat)
+        translate([0, 0, lower_brg_z0 + brg_w])
+            difference() {
+                cylinder(d = sleeve_inner_od, h = spacer_h);
+                translate([0, 0, -eps]) cylinder(d = 8.4, h = spacer_h + 2*eps);
+            }
+}
+
+// ---------------------------------------------------
 // 3. 스케이트 스페이서 8x10x10 (범용)
 // ---------------------------------------------------
 module skate_spacer(z0) {
