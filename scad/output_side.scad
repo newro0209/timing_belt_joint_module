@@ -148,6 +148,11 @@ module arm_hub() {
                 translate([0, 0, hub_z0])
                     linear_extrude(height = hub_flange_t)
                         _hub_flange2d();
+                // 플랜지 단차 지붕 — 뒤집어 출력 시 서포트 프리 (1.3mm 단차 6개)
+                for (k = [0:5])
+                    translate([0, 0, hub_flange_z1 + k * 1.3])
+                        linear_extrude(height = 1.3 + eps)
+                            offset(delta = -1.3 * (k + 1)) _hub_flange2d();
                 // 암 (+x 방향, 끝으로 갈수록 테이퍼)
                 translate([0, 0, arm_z0])
                     linear_extrude(height = arm_z1 - arm_z0)
@@ -170,10 +175,14 @@ module arm_hub() {
             translate([0, 0, upper_brg_z0 - eps])
                 cylinder(d = brg_od + 0.1, h = hub_z1 - upper_brg_z0 + 2*eps);
             // 클램프 볼트 M3 관통홀 Ø3.4 — 플랜지 관통
+            // + 헤드 카운터보어 Ø6.5 (단차 지붕 관통, 헤드 안착·드라이버 접근)
             for (a = clamp_bolt_angles)
-                rotate([0, 0, a])
+                rotate([0, 0, a]) {
                     translate([clamp_pcd/2, 0, hub_z0 - 1])
                         cylinder(d = 3.4, h = hub_flange_t + 2);
+                    translate([clamp_pcd/2, 0, hub_flange_z1 - eps])
+                        cylinder(d = 6.5, h = 12);
+                }
             // 암 끝 Ø8 구멍 (다음 관절용)
             translate([arm_len, 0, arm_z0 - eps])
                 cylinder(d = 8, h = (arm_z1 - arm_z0) + 2*eps);
